@@ -1,0 +1,15 @@
+# Dependencies & Temporary Files
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+# Build & Conversion Scratch
+convert_to_pdf.ps1
+generate_report_diagrams.py
+build_full_report_docx.py
+generate_icons.py
+
+# Keep Assets and Core App
+!icons/
+!report_assets/

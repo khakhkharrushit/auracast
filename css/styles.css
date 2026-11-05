@@ -1,0 +1,894 @@
+/* ===================================================================
+   AURACAST STUDIO — Modern Cyberpunk Glassmorphism Design System
+   =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-core: #07090e;
+  --bg-surface: rgba(15, 20, 32, 0.72);
+  --bg-surface-elevated: rgba(22, 29, 48, 0.82);
+  --border-glow: rgba(0, 242, 254, 0.28);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+
+  --accent-cyan: #00f2fe;
+  --accent-purple: #7928ca;
+  --accent-pink: #ff007f;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg-core);
+  color: var(--text-main);
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===================================================================
+   CANVAS STACK & VIDEO LAYER
+   =================================================================== */
+#viewport-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#webcam-video {
+  display: none; /* Processed in background canvas */
+}
+
+.studio-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#bg-canvas {
+  z-index: 1;
+}
+
+#draw-canvas {
+  z-index: 2;
+  pointer-events: none;
+}
+
+#hud-canvas {
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ===================================================================
+   TOP NAVIGATION BAR (GLASSMORPHISM)
+   =================================================================== */
+#top-bar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 20px;
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glow);
+  border-radius: 50px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(0, 242, 254, 0.15);
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+.brand-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, #ffffff, var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mode-nav-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  border-radius: 30px;
+  gap: 4px;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mode-btn.active {
+  color: #000;
+  background: linear-gradient(135deg, var(--accent-cyan), #38bdf8);
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.45);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-action-btn:hover {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: var(--accent-cyan);
+}
+
+.viva-pill-btn {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+  border: none;
+  box-shadow: 0 0 12px rgba(121, 40, 202, 0.4);
+}
+
+.viva-pill-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px rgba(121, 40, 202, 0.6);
+}
+
+/* ===================================================================
+   FLOATING SIDEBAR CONTROL PANEL
+   =================================================================== */
+#sidebar-panel {
+  position: fixed;
+  left: 20px;
+  top: 90px;
+  width: 280px;
+  z-index: 10;
+  background: var(--bg-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.panel-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent-cyan);
+}
+
+.control-section {
+  margin-bottom: 16px;
+}
+
+.section-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* Grid Buttons (Brushes & Filters) */
+.btn-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.btn-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.studio-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-family: var(--font-main);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.studio-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-glow);
+}
+
+.studio-btn.active {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+}
+
+/* Color Swatches */
+.color-picker-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.color-dot.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Slider */
+.sleek-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  outline: none;
+  cursor: pointer;
+}
+
+.sleek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan);
+  cursor: pointer;
+}
+
+/* Action Buttons (Undo, Export) */
+.action-buttons-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-export-accent {
+  background: linear-gradient(135deg, var(--accent-cyan), #0284c7);
+  color: #000;
+  border: none;
+  font-weight: 700;
+}
+
+/* ===================================================================
+   GESTURE GUIDE CHEAT SHEET (BOTTOM LEFT)
+   =================================================================== */
+#gesture-guide-card {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 280px;
+  z-index: 10;
+  background: var(--bg-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+
+.guide-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+
+.guide-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-bottom: 5px;
+}
+
+.guide-gesture {
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+  background: rgba(0, 242, 254, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.guide-action {
+  color: var(--text-dim);
+}
+
+/* ===================================================================
+   LIVE TELEMETRY HUD (BOTTOM RIGHT)
+   =================================================================== */
+#telemetry-hud {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 10;
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.telemetry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.telemetry-label {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.telemetry-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.telemetry-badge {
+  color: var(--accent-emerald);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent-emerald);
+  border-radius: 50%;
+  animation: pulseAnim 1.5s infinite;
+}
+
+@keyframes pulseAnim {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.6); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===================================================================
+   GESTURE DJ DECK COMPONENT (MODE 3)
+   =================================================================== */
+#dj-deck-hud {
+  position: fixed;
+  right: 20px;
+  top: 90px;
+  width: 260px;
+  z-index: 10;
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.deck-track-info {
+  margin-bottom: 12px;
+}
+
+.deck-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.deck-artist {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.volume-meter-wrapper {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.volume-bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#volume-bar-fill {
+  width: 75%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+  border-radius: 4px;
+  transition: width 0.1s ease;
+}
+
+/* ===================================================================
+   ACADEMIC PRESENTATION & VIVA MODAL
+   =================================================================== */
+#viva-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
+  background: rgba(4, 6, 12, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+.modal-card {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-glow);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 950px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 32px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 242, 254, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.modal-subtitle {
+  font-size: 0.85rem;
+  color: var(--accent-cyan);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #fff;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.member-role-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+
+.member-role-card.lead-member {
+  border-color: var(--accent-cyan);
+}
+
+.member-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.member-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.member-module {
+  display: inline-block;
+  background: rgba(121, 40, 202, 0.25);
+  border: 1px solid var(--accent-purple);
+  color: #d8b4fe;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.member-bullets {
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.member-bullets li {
+  margin-bottom: 6px;
+  position: relative;
+  padding-left: 14px;
+}
+
+.member-bullets li::before {
+  content: "▹";
+  position: absolute;
+  left: 0;
+  color: var(--accent-cyan);
+}
+
+.viva-qa-section {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  border-left: 3px solid var(--accent-cyan);
+}
+
+.qa-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.qa-item {
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+
+.qa-q {
+  color: var(--accent-cyan);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.qa-a {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ===================================================================
+   MOBILE & TABLET RESPONSIVE SYSTEM (PWA ADAPTATIONS)
+   =================================================================== */
+
+.install-pwa-btn {
+  background: linear-gradient(135deg, #10b981, #06b6d4) !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+#mobile-dock {
+  display: none;
+}
+
+/* Tablet / Medium Screens (iPad, Large Android Tablets, Surface) */
+@media screen and (max-width: 1024px) {
+  #top-bar {
+    width: 95%;
+    max-width: 95vw;
+    gap: 10px;
+    padding: 6px 14px;
+  }
+
+  .brand-title {
+    font-size: 0.95rem;
+  }
+
+  .mode-btn {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .icon-action-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  #sidebar-panel {
+    top: 75px;
+    left: 12px;
+    width: 250px;
+  }
+
+  #telemetry-hud {
+    right: 12px;
+    bottom: 12px;
+    min-width: 190px;
+    padding: 10px 14px;
+  }
+
+  #gesture-guide-card {
+    left: 12px;
+    bottom: 12px;
+    width: 240px;
+  }
+}
+
+/* Mobile Screens (Phones, Portrait Tablets, Foldables) */
+@media screen and (max-width: 768px) {
+  #top-bar {
+    top: 8px;
+    width: 96%;
+    padding: 6px 10px;
+    justify-content: space-between;
+    border-radius: 20px;
+    gap: 6px;
+  }
+
+  /* Hide desktop mode tabs on small phones to save space */
+  .mode-nav-tabs {
+    display: none;
+  }
+
+  .brand-title {
+    font-size: 0.85rem;
+  }
+
+  .header-actions {
+    gap: 5px;
+  }
+
+  .header-actions .icon-action-btn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    border-radius: 12px;
+  }
+
+  /* Hide non-essential desktop buttons on mobile to avoid clutter */
+  #fullscreen-btn,
+  #sim-toggle-btn {
+    display: none;
+  }
+
+  /* Floating Bottom Mobile Dock */
+  #mobile-dock {
+    display: flex;
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 94%;
+    max-width: 420px;
+    z-index: 50;
+    background: var(--bg-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-glow);
+    border-radius: 35px;
+    padding: 6px;
+    justify-content: space-around;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.2);
+  }
+
+  .dock-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .dock-icon {
+    font-size: 1.15rem;
+  }
+
+  .dock-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+
+  .dock-btn.active {
+    color: #000;
+    background: linear-gradient(135deg, var(--accent-cyan), #38bdf8);
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+  }
+
+  /* Drawer-style Sidebar on Mobile */
+  #sidebar-panel {
+    top: 60px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 48vh;
+    overflow-y: auto;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    display: none; /* Toggled via Tools button on mobile */
+  }
+
+  #sidebar-panel.mobile-open {
+    display: block !important;
+  }
+
+  /* Minimize guide card and telemetry on mobile to keep camera clean */
+  #gesture-guide-card {
+    display: none; /* Kept uncluttered on small phone viewports */
+  }
+
+  #telemetry-hud {
+    right: 8px;
+    bottom: 74px; /* Above mobile dock */
+    padding: 8px 10px;
+    min-width: 150px;
+    font-size: 0.68rem;
+    gap: 4px;
+    background: rgba(10, 15, 25, 0.85);
+  }
+
+  #dj-deck-hud {
+    right: 8px;
+    top: 65px;
+    width: auto;
+    left: 8px;
+    padding: 12px;
+  }
+
+  .modal-card {
+    width: 95%;
+    max-height: 90vh;
+    padding: 18px;
+  }
+
+  .modal-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AuraCast — Hand Gesture & Vision Controlled Virtual Multimedia Studio</title>
+  <meta name="description" content="AuraCast is a cutting-edge multimedia systems project featuring real-time hand gesture recognition, Air Canvas, Virtual Air Instruments, DJ Deck, and Computer Vision filters.">
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00f2fe">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AuraCast">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- MediaPipe Vision Libraries via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Fullscreen Interactive Canvas Stack -->
+  <div id="viewport-container">
+    <!-- Hidden Raw Webcam Stream -->
+    <video id="webcam-video" playsinline></video>
+
+    <!-- Canvas Layer 1: Background Video & Real-time Vision Filters -->
+    <canvas id="bg-canvas" class="studio-canvas"></canvas>
+
+    <!-- Canvas Layer 2: Air Canvas Holographic Drawing & Particles -->
+    <canvas id="draw-canvas" class="studio-canvas"></canvas>
+
+    <!-- Canvas Layer 3: HUD Skeleton, Reticles, Virtual Instruments & Deck -->
+    <canvas id="hud-canvas" class="studio-canvas"></canvas>
+  </div>
+
+  <!-- Top Glassmorphism Navigation Bar -->
+  <header id="top-bar">
+    <div class="brand-badge">
+      <div class="brand-logo-icon">✨</div>
+      <span class="brand-title">AURACAST</span>
+    </div>
+
+    <!-- 4 Core Multimedia Studio Modes -->
+    <nav class="mode-nav-tabs">
+      <button class="mode-btn active" data-mode="CANVAS" id="mode-btn-canvas">
+        <span>🎨</span> Air Canvas
+      </button>
+      <button class="mode-btn" data-mode="INSTRUMENTS" id="mode-btn-instruments">
+        <span>🥁</span> Air Synth & Drums
+      </button>
+      <button class="mode-btn" data-mode="DECK" id="mode-btn-deck">
+        <span>🎧</span> Gesture DJ Deck
+      </button>
+      <button class="mode-btn" data-mode="FILTERS" id="mode-btn-filters">
+        <span>👁️</span> Vision Filters
+      </button>
+    </nav>
+
+    <!-- Presentation & Quick Actions -->
+    <div class="header-actions">
+      <button class="icon-action-btn install-pwa-btn" id="pwa-install-btn" title="Install AuraCast on Mobile or Tablet" style="display:none;">
+        📲 Install App
+      </button>
+      <button class="icon-action-btn" id="sound-toggle-btn" title="Click to Enable Sound & Test Audio">
+        🔊 Enable Sound
+      </button>
+      <button class="icon-action-btn viva-pill-btn" id="viva-btn" title="View Syllabus Mapping & Viva Q&A">
+        🎓 Viva Guide (Ma'am)
+      </button>
+      <button class="icon-action-btn" id="cam-flip-btn" title="Switch Front/Rear Camera (Mobile/Tablet)">
+        🔄 Flip Cam
+      </button>
+      <button class="icon-action-btn" id="cam-reset-btn" title="Restart Camera Stream">
+        📷 Restart Cam
+      </button>
+      <button class="icon-action-btn" id="sim-toggle-btn" title="Toggle Mouse/Touch Simulation Mode">
+        🖱️ Mouse Mode
+      </button>
+      <button class="icon-action-btn" id="fullscreen-btn" title="Toggle Fullscreen Presentation">
+        ⛶ Fullscreen
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Bottom Quick Bar for fast mode switching on Phones & Tablets -->
+  <nav id="mobile-dock" aria-label="Mobile Navigation">
+    <button class="dock-btn active" data-mode="CANVAS">
+      <span class="dock-icon">🎨</span>
+      <span class="dock-label">Canvas</span>
+    </button>
+    <button class="dock-btn" data-mode="INSTRUMENTS">
+      <span class="dock-icon">🥁</span>
+      <span class="dock-label">Drums</span>
+    </button>
+    <button class="dock-btn" data-mode="DECK">
+      <span class="dock-icon">🎧</span>
+      <span class="dock-label">DJ Deck</span>
+    </button>
+    <button class="dock-btn" data-mode="FILTERS">
+      <span class="dock-icon">👁️</span>
+      <span class="dock-label">Filters</span>
+    </button>
+    <button class="dock-btn" id="mobile-toggle-tools-btn">
+      <span class="dock-icon">⚙️</span>
+      <span class="dock-label">Tools</span>
+    </button>
+  </nav>
+
+  <!-- Left Floating Contextual Control Panel -->
+  <aside id="sidebar-panel">
+    
+    <!-- 1. AIR CANVAS CONTROLS -->
+    <div id="canvas-controls">
+      <div class="panel-header">
+        <span class="panel-title">Air Canvas Studio</span>
+        <span style="font-size:0.75rem; color:var(--accent-cyan);">Module 3 & 4</span>
+      </div>
+
+      <!-- Brush Selector -->
+      <div class="control-section">
+        <label class="section-label">Holographic Brush</label>
+        <div class="btn-grid-3">
+          <button class="studio-btn brush-btn active" data-brush="NEON_GLOW">Neon</button>
+          <button class="studio-btn brush-btn" data-brush="RAINBOW_STREAM">Rainbow</button>
+          <button class="studio-btn brush-btn" data-brush="FIRE_SPARKS">Sparks</button>
+          <button class="studio-btn brush-btn" data-brush="LASER">Laser</button>
+          <button class="studio-btn brush-btn" data-brush="ERASER">Eraser</button>
+        </div>
+      </div>
+
+      <!-- Palette -->
+      <div class="control-section">
+        <label class="section-label">Color Swatch</label>
+        <div class="color-picker-row">
+          <div class="color-dot active" style="background:#00f2fe;" data-color="#00f2fe"></div>
+          <div class="color-dot" style="background:#7928ca;" data-color="#7928ca"></div>
+          <div class="color-dot" style="background:#ff007f;" data-color="#ff007f"></div>
+          <div class="color-dot" style="background:#10b981;" data-color="#10b981"></div>
+          <div class="color-dot" style="background:#f59e0b;" data-color="#f59e0b"></div>
+          <div class="color-dot" style="background:#ffffff;" data-color="#ffffff"></div>
+        </div>
+      </div>
+
+      <!-- Brush Size Slider -->
+      <div class="control-section">
+        <div class="section-label">
+          <span>Stroke Width</span>
+          <span id="brush-size-val" style="color:var(--accent-cyan);">8px</span>
+        </div>
+        <input type="range" id="brush-size" class="sleek-slider" min="2" max="30" value="8">
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons-row">
+        <button class="action-btn" id="btn-undo">↩ Undo</button>
+        <button class="action-btn" id="btn-redo">↪ Redo</button>
+        <button class="action-btn" id="btn-clear">🗑 Clear</button>
+      </div>
+      <div class="action-buttons-row">
+        <button class="action-btn btn-export-accent" id="btn-export">📸 Export Artwork (PNG)</button>
+      </div>
+    </div>
+
+    <!-- 2. AIR INSTRUMENT CONTROLS -->
+    <div id="instrument-controls" style="display:none;">
+      <div class="panel-header">
+        <span class="panel-title">Virtual Air Audio</span>
+        <span style="font-size:0.75rem; color:var(--accent-cyan);">Module 2</span>
+      </div>
+
+      <div class="control-section">
+        <label class="section-label">Instrument Select</label>
+        <div class="btn-grid-2">
+          <button class="studio-btn active" id="btn-inst-drums">🥁 Air Drums (5-Piece)</button>
+          <button class="studio-btn" id="btn-inst-synth">🎹 Melodic Synth (8-Key)</button>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <label class="section-label">Acoustic Specs</label>
+        <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+          Real-time physical collision detection using 3D fingertip landmarks. Synthesized using Web Audio API Oscillators, High-Pass noise bursts, and ADSR envelopes.
+        </p>
+      </div>
+    </div>
+
+    <!-- 3. DJ DECK CONTROLS -->
+    <div id="deck-controls" style="display:none;">
+      <div class="panel-header">
+        <span class="panel-title">Gesture DJ Console</span>
+        <span style="font-size:0.75rem; color:var(--accent-cyan);">Module 4 & 7</span>
+      </div>
+
+      <div class="deck-track-info">
+        <div class="deck-title" id="deck-track-title">Jamal Kudu</div>
+        <div class="deck-artist" id="deck-track-artist">Abrar’s Entry (Animal) • 128 BPM</div>
+        <div class="deck-time-row" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.75rem; font-family:var(--font-mono); color:var(--text-muted);">
+          <span id="deck-current-time" style="color:var(--accent-cyan); font-weight:700;">0:32</span>
+          <span class="cue-badge" style="background:rgba(0,242,254,0.15); border:1px solid rgba(0,242,254,0.4); color:var(--accent-cyan); padding:1px 6px; border-radius:4px; font-size:0.65rem; font-weight:600;">CUED &gt;30s</span>
+          <span id="deck-duration">--:--</span>
+        </div>
+        <div class="deck-progress-track" style="width:100%; height:5px; background:rgba(255,255,255,0.1); border-radius:3px; margin-top:6px; overflow:hidden;">
+          <div id="deck-progress-fill" style="width:0%; height:100%; background:linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); transition:width 0.15s ease;"></div>
+        </div>
+      </div>
+
+      <div class="volume-meter-wrapper">
+        <span style="font-size:0.75rem; color:var(--text-muted);">VOL</span>
+        <div class="volume-bar-track">
+          <div id="volume-bar-fill"></div>
+        </div>
+        <span id="volume-text" style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent-cyan);">75%</span>
+      </div>
+
+      <div class="action-buttons-row">
+        <button class="action-btn" id="dj-prev-btn">⏮ Swipe Left</button>
+        <button class="action-btn" id="dj-play-btn" style="background:var(--accent-cyan); color:#000; font-weight:700;">PLAY (FIST)</button>
+        <button class="action-btn" id="dj-next-btn">⏭ Swipe Right</button>
+      </div>
+    </div>
+
+    <!-- 4. COMPUTER VISION FILTERS -->
+    <div id="filter-controls" style="display:none;">
+      <div class="panel-header">
+        <span class="panel-title">Vision Filter Lab</span>
+        <span style="font-size:0.75rem; color:var(--accent-cyan);">Module 3</span>
+      </div>
+
+      <div class="control-section">
+        <label class="section-label">Convolution & Enhancement</label>
+        <div class="btn-grid-2">
+          <button class="studio-btn filter-btn active" data-filter="NORMAL">Clean Video</button>
+          <button class="studio-btn filter-btn" data-filter="SOBEL_EDGE">Sobel Edge (3x3)</button>
+          <button class="studio-btn filter-btn" data-filter="CYBERPUNK">Cyberpunk Neon</button>
+          <button class="studio-btn filter-btn" data-filter="THERMAL">Thermal Heatmap</button>
+          <button class="studio-btn filter-btn" data-filter="MATRIX">Matrix Rain</button>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <label class="section-label">AR HUD Elements</label>
+        <button class="studio-btn active" id="toggle-hud-btn" style="width:100%;">
+          Toggle Sci-Fi Hand Reticles
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Bottom Left: Contextual Gesture Guide (Individual for each screen) -->
+  <div id="gesture-guide-card">
+    
+    <!-- 1. AIR CANVAS GUIDE -->
+    <div id="guide-canvas" class="mode-guide">
+      <div class="guide-title">Air Canvas Gestures (Module 3 & 4)</div>
+      <div class="guide-item">
+        <span class="guide-gesture">☝️ Index Point</span>
+        <span class="guide-action">Hold & Move to Draw</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">✋ Open Palm</span>
+        <span class="guide-action">Eraser Circle follows hand</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">✌️ Peace Sign</span>
+        <span class="guide-action">Hover (move without drawing)</span>
+      </div>
+    </div>
+
+    <!-- 2. AIR INSTRUMENTS GUIDE -->
+    <div id="guide-instruments" class="mode-guide" style="display:none;">
+      <div class="guide-title">Air Audio Gestures (Module 2)</div>
+      <div class="guide-item">
+        <span class="guide-gesture">☝️ Tap Fingertip</span>
+        <span class="guide-action">Strike floating pads in mid-air</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">🥁 5 Drum Pads</span>
+        <span class="guide-action">Crash, Hi-Hat, Snare, Tom, Kick</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">🎹 8 Synth Keys</span>
+        <span class="guide-action">C4, D4, E4, F4, G4, A4, B4, C5</span>
+      </div>
+    </div>
+
+    <!-- 3. DJ DECK GUIDE -->
+    <div id="guide-deck" class="mode-guide" style="display:none;">
+      <div class="guide-title">Gesture DJ Controls (Module 4 & 7)</div>
+      <div class="guide-item">
+        <span class="guide-gesture">↕️ Move Hand Up/Down</span>
+        <span class="guide-action">Slide Volume (0% - 100%)</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">💨 Hand Swipe Left/Right</span>
+        <span class="guide-action">Skip to Previous / Next Track</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">✊ Closed Fist</span>
+        <span class="guide-action">Play / Pause Music Beat</span>
+      </div>
+    </div>
+
+    <!-- 4. VISION FILTERS GUIDE -->
+    <div id="guide-filters" class="mode-guide" style="display:none;">
+      <div class="guide-title">Vision Filter Guide (Module 3)</div>
+      <div class="guide-item">
+        <span class="guide-gesture">🔘 Sobel Edge</span>
+        <span class="guide-action">3x3 Spatial Convolution Edge detection</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">🔘 Clean Video</span>
+        <span class="guide-action">Normal 60 FPS hardware video feed</span>
+      </div>
+      <div class="guide-item">
+        <span class="guide-gesture">🎯 Sci-Fi HUD</span>
+        <span class="guide-action">Iron-man reticles on wrists & fingers</span>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Bottom Right: Live Real-Time Telemetry HUD -->
+  <div id="telemetry-hud">
+    <div class="telemetry-row">
+      <span class="telemetry-label">Stream Status</span>
+      <span class="telemetry-badge">
+        <span class="pulse-dot"></span>
+        <span id="cam-status">INITIALIZING...</span>
+      </span>
+    </div>
+    <div class="telemetry-row">
+      <span class="telemetry-label">Frame Rate</span>
+      <span class="telemetry-value" id="telemetry-fps">60 FPS</span>
+    </div>
+    <div class="telemetry-row">
+      <span class="telemetry-label">Vision Latency</span>
+      <span class="telemetry-value" id="telemetry-lat">5 ms</span>
+    </div>
+    <div class="telemetry-row">
+      <span class="telemetry-label">Hands Tracked</span>
+      <span class="telemetry-value" id="telemetry-hands">0 ACTIVE</span>
+    </div>
+    <div class="telemetry-row">
+      <span class="telemetry-label">Detected Gesture</span>
+      <span class="telemetry-value" id="telemetry-gesture" style="color:var(--accent-cyan);">NONE</span>
+    </div>
+  </div>
+
+  <!-- Academic Syllabus & Viva Defense Modal -->
+  <div id="viva-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">AuraCast — Project Defense & Viva Guide</h2>
+          <p class="modal-subtitle">Multimedia Systems Course • 3-Member Work Division & Academic Mapping</p>
+        </div>
+        <button class="close-btn" id="close-modal-btn">&times;</button>
+      </div>
+
+      <!-- 3 Members Card Grid -->
+      <div class="modal-grid">
+        <!-- Member 1 -->
+        <div class="member-role-card">
+          <div class="member-num">Student 1</div>
+          <div class="member-title">Audio & Sound Synthesis</div>
+          <span class="member-module">Module 2: Sound & Audio</span>
+          <ul class="member-bullets">
+            <li>Designed the <strong>Web Audio API synthesis engine</strong> producing multi-timbre percussion (808 Kick, Snare, Hi-Hat, Tom) and 8-key melodic synth notes.</li>
+            <li>Implemented the real-time <strong>Fast Fourier Transform (FFT)</strong> frequency analyzer and spectral visualization bar HUD.</li>
+            <li>Built frequency-domain filters (High-pass, Band-pass) and mathematical ADSR gain envelopes for acoustic realism.</li>
+          </ul>
+        </div>
+
+        <!-- Member 2 -->
+        <div class="member-role-card lead-member">
+          <div class="member-num">Student 2</div>
+          <div class="member-title">Computer Vision & Air Canvas</div>
+          <span class="member-module">Module 3 & 4: Images, Vision & Animation</span>
+          <ul class="member-bullets">
+            <li>Implemented the <strong>21-point hand landmark tracking</strong> and 3D Euclidean geometric gesture classification (Pointing, Pinch, Peace, Fist, Palm).</li>
+            <li>Built the 60 FPS <strong>Air Canvas engine</strong> with Quadratic Bézier curve smoothing, particle physics sparks, and high-res PNG export.</li>
+            <li>Programmed real-time pixel-level convolution kernels including the <strong>3x3 Sobel Operator</strong> and thermal heatmap color grading.</li>
+          </ul>
+        </div>
+
+        <!-- Member 3 -->
+        <div class="member-role-card">
+          <div class="member-num">Student 3</div>
+          <div class="member-title">Gesture DJ Deck & Telemetry</div>
+          <span class="member-module">Module 6 & 7: Real-Time Multimedia Systems</span>
+          <ul class="member-bullets">
+            <li>Built the <strong>Gesture DJ media controller</strong> mapping continuous vertical hand height to master volume and horizontal velocity vectors to track skips.</li>
+            <li>Implemented the <strong>real-time QoS telemetry HUD</strong> tracking camera latency budget (ms), frame drop monitoring, and FPS counters.</li>
+            <li>Engineered the fallback simulation subsystem ensuring seamless presentation even if hardware webcam access is restricted.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Viva Q&A Guide -->
+      <div class="viva-qa-section">
+        <h3 class="qa-heading">Anticipated Questions From Evaluator ("Ma'am") & Answers:</h3>
+        
+        <div class="qa-item">
+          <div class="qa-q">Q1: How does the hand gesture recognition work mathematically?</div>
+          <div class="qa-a">
+            <strong>A:</strong> The model extracts 21 normalized 3D coordinates (x, y, z) per hand. We calculate 3D Euclidean distances between the wrist landmark (0), MCP joints, and fingertips (4, 8, 12, 16, 20). If the distance of a fingertip to the wrist is greater than its PIP joint, it is classified as extended. A pinch is detected when the Euclidean distance between landmark 4 (Thumb tip) and 8 (Index tip) falls below 0.07.
+          </div>
+        </div>
+
+        <div class="qa-item">
+          <div class="qa-q">Q2: How is the Air Drum sound generated without lag?</div>
+          <div class="qa-a">
+            <strong>A:</strong> Instead of fetching heavy static MP3 files from a server (which causes network jitter and buffering lag), we synthesize audio in real-time on the client using the browser's <code>AudioContext</code>. For example, the kick drum is an oscillator dropping from 160 Hz to 35 Hz with an exponential gain curve, achieving zero-latency audio playback under 5ms.
+          </div>
+        </div>
+
+        <div class="qa-item">
+          <div class="qa-q">Q3: How does the Sobel Edge Detection in the Vision Filter work?</div>
+          <div class="qa-a">
+            <strong>A:</strong> We convolve the live video pixel buffer with two 3x3 directional derivative kernels: Gx (detecting vertical edges) and Gy (detecting horizontal edges). The gradient magnitude is computed as &radic;(Gx&sup2; + Gy&sup2;). Pixels exceeding a contrast threshold are rendered as glowing neon edges, demonstrating spatial image enhancement from Module 3.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Scripts (Strict Execution Order) -->
+  <script src="js/audio-engine.js"></script>
+  <script src="js/vision-tracker.js"></script>
+  <script src="js/air-canvas.js"></script>
+  <script src="js/instruments.js"></script>
+  <script src="js/media-deck.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Service Worker Registration for PWA Installation -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('AuraCast Service Worker registered:', reg.scope))
+          .catch((err) => console.warn('Service Worker registration error:', err));
+      });
+    }
+
+    // Capture PWA beforeinstallprompt event
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('pwa-install-btn');
+      if (installBtn) {
+        installBtn.style.display = 'inline-flex';
+        installBtn.addEventListener('click', async () => {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log('User PWA install outcome:', outcome);
+          deferredPrompt = null;
+          installBtn.style.display = 'none';
+        });
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('AuraCast has been successfully installed on this device!');
+      const installBtn = document.getElementById('pwa-install-btn');
+      if (installBtn) installBtn.style.display = 'none';
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "auracast-multimedia-studio",
+  "version": "1.0.0",
+  "description": "AuraCast - Hand Gesture & Computer Vision Controlled Virtual Multimedia Studio",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -l 3000 .",
+    "dev": "npx serve -l 3000 ."
+  },
+  "keywords": [
+    "multimedia-systems",
+    "mediapipe",
+    "computer-vision",
+    "web-audio-api",
+    "air-canvas",
+    "gesture-recognition"
+  ],
+  "author": "Multimedia Systems Group Project",
+  "license": "MIT"
+}
